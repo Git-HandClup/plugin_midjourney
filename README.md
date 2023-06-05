@@ -11,19 +11,19 @@
 7. 该插件用到了redis进行轮询（能怎么简单怎么来），每隔30s拿着任务ID进行查询redis是否已经有结果，由于midjourney处于fast的速度下是一分钟出图，所以我这边设置的是超过90s以后会直接回复超时并停止。
 8. 如何同时返回图片和对应的ID：我是直接修改了wechat_channel.py文件，在send方法中，当reply.type == ReplyType.IMAGE_URL时，原本的代码是什么我也忘记了，我是直接在midjourney返回图片链接的时候在后面加上了?id=xxxx，只需要将这个作为关键词进行分割字符串然后循环发送即可，这里需要提醒一下，因为midjourney的图片链接需要魔法才能访问的，所以在下载的时候需要设置代理，具体代码如下：
  ```python             
- content = reply.content.split("?id=")
-	for index, item in enumerate(content):
-			if index > 0:
-					itchat.send("图片ID为：" + item, toUserName=receiver)
-					logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
-			else:
-					proxy = conf().get("proxy", "")
-					proxies = {"http": proxy, "https": proxy}
-					pic_res = requests.get(item, proxies=proxies, stream=True)
-					image_storage = io.BytesIO()
-					for block in pic_res.iter_content(1024):
-							image_storage.write(block)
-					image_storage.seek(0)
-					itchat.send_image(image_storage, toUserName=receiver)
-					logger.info("[WX] sendImage url={}, receiver={}".format(item, receiver)) 
+content = reply.content.split("?id=")
+for index, item in enumerate(content):
+	if index > 0:
+		itchat.send("图片ID为：" + item, toUserName=receiver)
+		logger.info("[WX] sendMsg={}, receiver={}".format(reply, receiver))
+	else:
+		proxy = conf().get("proxy", "")
+		proxies = {"http": proxy, "https": proxy}
+		pic_res = requests.get(item, proxies=proxies, stream=True)
+		image_storage = io.BytesIO()
+		for block in pic_res.iter_content(1024):
+				image_storage.write(block)
+		image_storage.seek(0)
+		itchat.send_image(image_storage, toUserName=receiver)
+		logger.info("[WX] sendImage url={}, receiver={}".format(item, receiver)) 
 ```
