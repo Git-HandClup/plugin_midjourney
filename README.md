@@ -1,5 +1,5 @@
 # plugin_midjourney
-1. 先安装redis依赖：**pip3 install redis***
+1. 先安装redis依赖：**pip3 install redis**
 2. 该项目是一个插件，插件应用于zhayujie / chatgpt-on-wechat这个项目。
 3. 插件的主要功能用于调用Midjourneyd，支持**imagine、upscale、variation、blend、describe**五个基本命令
 4. 垫图的具体效果以及使用说明如图：
