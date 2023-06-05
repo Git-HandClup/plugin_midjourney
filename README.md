@@ -27,3 +27,4 @@ for index, item in enumerate(content):
 		itchat.send_image(image_storage, toUserName=receiver)
 		logger.info("[WX] sendImage url={}, receiver={}".format(item, receiver)) 
 ```
+9. 最后说明：本人不擅长Python，只能依靠感觉来写，有写的不好的地方也请见谅，希望这个插件能够帮助大家更方便使用midjourney。
