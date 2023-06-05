@@ -1,4 +1,3 @@
 {
-    "key": "xxxx",
-    "cx": "xxxxxx"
+    "notifyHook": "http://xxxxx:8787/midjourney/notify"
 }
