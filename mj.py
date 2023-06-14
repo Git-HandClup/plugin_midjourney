@@ -44,6 +44,7 @@ class Mj(Plugin):
                         PRIMARY KEY (sessionid, msgid))''')
             self.conn.commit()
             self.notifyHook = conf["notifyHook"]
+            self.midjourneyProxy = conf["midjourneyProxy"]
             self.redis = redis.Redis(host='xxxxxx', port=6379, password='xxxxxx', decode_responses=True)
             self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
             self.handlers[Event.ON_RECEIVE_MESSAGE] = self.on_receive_message
@@ -75,16 +76,25 @@ class Mj(Plugin):
             query = content_list[1].strip()
             if query == "imagine":
                 imagine = self._get_imagine(content_list[2].strip())
-                image = self._get_redis_url(imagine["result"])
+                if self.notifyHook != "":
+                    image = self._get_redis_url(imagine["result"])
+                else:
+                    image = self._get_midjourney_task(imagine["result"])
             elif query == "upscale" or query == "variation":
                 imagine = self._get_upscale_or_variation(content_list[2].strip())
-                image = self._get_redis_url(imagine["result"])
+                if self.notifyHook != "":
+                    image = self._get_redis_url(imagine["result"])
+                else:
+                    image = self._get_midjourney_task(imagine["result"])
             elif query == "blend":
                 if 1 < int(content_list[2]) < 4:
                     images = self._get_chat_history_images(e_context, content_list[2], True)
                     if len(images) == int(content_list[2]):
                         imagine = self._get_blend(images)
-                        image = self._get_redis_url(imagine["result"])
+                        if self.notifyHook != "":
+                            image = self._get_redis_url(imagine["result"])
+                        else:
+                            image = self._get_midjourney_task(imagine["result"])
                     else:
                         reply = Reply(ReplyType.TEXT, f"聊天记录中的图片数量少于指定数量，无法进行垫图操作")
                         e_context["reply"] = reply
@@ -99,7 +109,10 @@ class Mj(Plugin):
                 image = self._get_chat_history_images(e_context, content_list[2], False)
                 if len(image) > 0:
                     imagine = self._get_describe(image)
-                    prompt = self._get_redis_url(imagine["result"])
+                    if self.notifyHook != "":
+                        prompt = self._get_redis_url(imagine["result"])
+                    else:
+                        prompt = self._get_midjourney_task(imagine["result"], "describe")
                     text = self._format_text(prompt)
                     reply = Reply(ReplyType.TEXT, f"{text}")
                     e_context["reply"] = reply
@@ -143,7 +156,7 @@ class Mj(Plugin):
                                 cmsg.create_time)
 
     def _get_imagine(self, query):
-        url = "http://xxxxxx:8080/mj/submit/imagine"
+        url = self.midjourneyProxy + "/submit/imagine"
         try:
             headers = {"Content-Type": "application/json"}
             data = json.dumps({"action": "IMAGINE", "prompt": query, "notifyHook": self.notifyHook})
@@ -153,7 +166,7 @@ class Mj(Plugin):
             return None
 
     def _get_upscale_or_variation(self, query):
-        url = "http://xxxxxx:8080/mj/submit/simple-change"
+        url = self.midjourneyProxy + "/submit/simple-change"
         try:
             headers = {"Content-Type": "application/json"}
             data = json.dumps({"content": query, "notifyHook": self.notifyHook})
@@ -163,7 +176,7 @@ class Mj(Plugin):
             return None
 
     def _get_blend(self, data):
-        url = "http://xxxxxx:8080/mj/submit/blend"
+        url = self.midjourneyProxy + "/submit/blend"
         try:
             images = []
             headers = {"Content-Type": "application/json"}
@@ -177,7 +190,7 @@ class Mj(Plugin):
             return None
 
     def _get_describe(self, data):
-        url = "http://xxxxxx:8080/mj/submit/describe"
+        url = self.midjourneyProxy + "/submit/describe"
         try:
             image = ""
             headers = {"Content-Type": "application/json"}
@@ -257,3 +270,20 @@ class Mj(Plugin):
                 else:
                     delay += 30
                     time.sleep(30)
+
+    def _get_midjourney_task(self, id, type="image"):
+        url = self.midjourneyProxy + "/task/" + id + "/fetch"
+        while True:
+            headers = {"Content-Type": "application/json"}
+            response = requests.get(url, headers=headers)
+            result = json.loads(response.text)
+            # 当前任务已提交或者正在进行中时就默认睡眠30s
+            if result["status"] == "SUBMITTED" or result["status"] == "IN_PROGRESS":
+                time.sleep(30)
+            elif result["status"] == "SUCCESS":
+                if type == "image":
+                    return result["imageUrl"]
+                else:
+                    return result["prompt"]
+            elif result["status"] == "FAILURE":
+                return None
