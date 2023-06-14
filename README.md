@@ -1,5 +1,5 @@
 # plugin_midjourney
-***当前插件已更新，可同时支持有回调或者没有回调两种情况，如果没有回调地址就直接留空，将会默认查询任务进度来获取图片链接，并且将midjourney-proxy的固定url放进了配置文件中，只需要按照格式修改config.json文件中的midjourneyProxy后即可访问插件中的相关接口。***
+***当前插件已更新，可同时支持有回调或者没有回调两种情况，如果没有回调地址就直接留空，将会默认查询任务进度来获取图片链接，并且将midjourney-proxy的固定url放进了配置文件中，只需要按照格式修改config.json文件中的midjourneyProxy后即可访问插件中的相关接口，注意！mj.py文件中有关于redis的配置，如果没有配置回调地址可以直接注释掉或者删除都行。***
 1. 先安装redis依赖：**pip3 install redis**
 2. 该项目是一个插件，插件应用于zhayujie / chatgpt-on-wechat，依赖于novicezk/midjourney-proxy
 3. **在使用该插件前需要确保你是否已经搭建好[novicezk/midjourney-proxy](https://github.com/novicezk/midjourney-proxy)这个服务，因为如果没有这个服务，那么插件就相当于是摆设，每个命令其实都是调用这个服务里的接口，我只是做了一个适配。**
