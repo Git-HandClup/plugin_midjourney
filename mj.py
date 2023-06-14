@@ -20,7 +20,7 @@ from plugins import *
     name="mj",
     desire_priority=-1,
     desc="midjourneyApi调用",
-    version="1.0",
+    version="2.0",
     author="amiliko",
 )
 class Mj(Plugin):
@@ -72,16 +72,16 @@ class Mj(Plugin):
             query = content_list[1].strip()
             if query == "imagine":
                 imagine = self._get_imagine(content_list[2].strip())
-                image = self._get_midjourney_task(imagine["result"])
+                image = self._get_midjourney_task(imagine["result"], "image")
             elif query == "upscale" or query == "variation":
                 imagine = self._get_upscale_or_variation(content_list[2].strip())
-                image = self._get_midjourney_task(imagine["result"])
+                image = self._get_midjourney_task(imagine["result"], "image")
             elif query == "blend":
                 if 1 < int(content_list[2]) < 4:
                     images = self._get_chat_history_images(e_context, content_list[2], True)
                     if len(images) == int(content_list[2]):
                         imagine = self._get_blend(images)
-                        image = self._get_midjourney_task(imagine["result"])
+                        image = self._get_midjourney_task(imagine["result"], "image")
                     else:
                         reply = Reply(ReplyType.TEXT, f"聊天记录中的图片数量少于指定数量，无法进行垫图操作")
                         e_context["reply"] = reply
@@ -143,7 +143,7 @@ class Mj(Plugin):
         url = self.midjourneyProxy + "/submit/imagine"
         try:
             headers = {"Content-Type": "application/json"}
-            data = json.dumps({"action": "IMAGINE", "prompt": query, "notifyHook": self.notifyHook})
+            data = json.dumps({"action": "IMAGINE", "prompt": query})
             response = requests.post(url, headers=headers, data=data)
             return json.loads(response.text)
         except Exception:
@@ -153,7 +153,7 @@ class Mj(Plugin):
         url = self.midjourneyProxy + "/submit/simple-change"
         try:
             headers = {"Content-Type": "application/json"}
-            data = json.dumps({"content": query, "notifyHook": self.notifyHook})
+            data = json.dumps({"content": query})
             response = requests.post(url, headers=headers, data=data)
             return json.loads(response.text)
         except Exception:
@@ -167,7 +167,7 @@ class Mj(Plugin):
             for i in range(len(data)):
                 record = list(data[i])
                 images.append(record[2])
-            data = json.dumps({"base64Array": images, "notifyHook": self.notifyHook})
+            data = json.dumps({"base64Array": images})
             response = requests.post(url, headers=headers, data=data)
             return json.loads(response.text)
         except Exception:
@@ -181,7 +181,7 @@ class Mj(Plugin):
             for i in range(len(data)):
                 record = list(data[i])
                 image = record[2]
-            data = json.dumps({"base64": image, "notifyHook": self.notifyHook})
+            data = json.dumps({"base64": image})
             response = requests.post(url, headers=headers, data=data)
             return json.loads(response.text)
         except Exception:
@@ -241,7 +241,7 @@ class Mj(Plugin):
                       (session_id, limit))
         return c.fetchall()
 
-    def _get_midjourney_task(self, id, type="image"):
+    def _get_midjourney_task(self, id, type):
         url = self.midjourneyProxy + "/task/" + id + "/fetch"
         while True:
             headers = {"Content-Type": "application/json"}
