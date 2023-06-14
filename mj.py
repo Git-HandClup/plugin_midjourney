@@ -43,9 +43,7 @@ class Mj(Plugin):
                         (sessionid TEXT, msgid INTEGER, content TEXT, type TEXT, timestamp INTEGER,
                         PRIMARY KEY (sessionid, msgid))''')
             self.conn.commit()
-            self.notifyHook = conf["notifyHook"]
             self.midjourneyProxy = conf["midjourneyProxy"]
-            self.redis = redis.Redis(host='xxxxxx', port=6379, password='xxxxxx', decode_responses=True)
             self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
             self.handlers[Event.ON_RECEIVE_MESSAGE] = self.on_receive_message
             logger.info("[Midjourney] inited")
@@ -76,25 +74,16 @@ class Mj(Plugin):
             query = content_list[1].strip()
             if query == "imagine":
                 imagine = self._get_imagine(content_list[2].strip())
-                if self.notifyHook != "":
-                    image = self._get_redis_url(imagine["result"])
-                else:
-                    image = self._get_midjourney_task(imagine["result"])
+                image = self._get_midjourney_task(imagine["result"])
             elif query == "upscale" or query == "variation":
                 imagine = self._get_upscale_or_variation(content_list[2].strip())
-                if self.notifyHook != "":
-                    image = self._get_redis_url(imagine["result"])
-                else:
-                    image = self._get_midjourney_task(imagine["result"])
+                image = self._get_midjourney_task(imagine["result"])
             elif query == "blend":
                 if 1 < int(content_list[2]) < 4:
                     images = self._get_chat_history_images(e_context, content_list[2], True)
                     if len(images) == int(content_list[2]):
                         imagine = self._get_blend(images)
-                        if self.notifyHook != "":
-                            image = self._get_redis_url(imagine["result"])
-                        else:
-                            image = self._get_midjourney_task(imagine["result"])
+                        image = self._get_midjourney_task(imagine["result"])
                     else:
                         reply = Reply(ReplyType.TEXT, f"聊天记录中的图片数量少于指定数量，无法进行垫图操作")
                         e_context["reply"] = reply
@@ -109,10 +98,7 @@ class Mj(Plugin):
                 image = self._get_chat_history_images(e_context, content_list[2], False)
                 if len(image) > 0:
                     imagine = self._get_describe(image)
-                    if self.notifyHook != "":
-                        prompt = self._get_redis_url(imagine["result"])
-                    else:
-                        prompt = self._get_midjourney_task(imagine["result"], "describe")
+                    prompt = self._get_midjourney_task(imagine["result"], "describe")
                     text = self._format_text(prompt)
                     reply = Reply(ReplyType.TEXT, f"{text}")
                     e_context["reply"] = reply
@@ -256,20 +242,6 @@ class Mj(Plugin):
             c.execute("SELECT * FROM chat_images WHERE sessionid=? ORDER BY timestamp DESC LIMIT ?",
                       (session_id, limit))
         return c.fetchall()
-
-    def _get_redis_url(self, id):
-        delay = 0
-        while True:
-            image = self.redis.get(id)
-            if delay >= 90 and image is None:
-                return None
-            else:
-                if image is not None:
-                    self.redis.delete(id)
-                    return image
-                else:
-                    delay += 30
-                    time.sleep(30)
 
     def _get_midjourney_task(self, id, type="image"):
         url = self.midjourneyProxy + "/task/" + id + "/fetch"
