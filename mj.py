@@ -22,7 +22,7 @@ from plugins import *
     name="mj",
     desire_priority=-1,
     desc="midjourneyApi调用",
-    version="0.1",
+    version="1.0",
     author="amiliko",
 )
 class Mj(Plugin):
@@ -225,7 +225,7 @@ class Mj(Plugin):
                 text_arr = prompt_list[prompt].split(maxsplit=1)
                 format_text = text_arr[1]
                 format_text = format_text.replace("[", "").replace("]", "")
-                format_text = format_text.replace("'", "")
+                format_text = format_text.replace("'", "").replace("'", "")
                 format_text = re.sub('\(.*?\)', '', format_text)
                 line = ""
                 if index < 4:

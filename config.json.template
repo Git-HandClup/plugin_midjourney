@@ -1,3 +1,4 @@
 {
-    "notifyHook": "http://xxxxx:8787/midjourney/notify"
+    "notifyHook": "",
+    "midjourneyProxy": "http://xxxxxxxxx:8080/mj"
 }
