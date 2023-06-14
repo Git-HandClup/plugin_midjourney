@@ -5,8 +5,6 @@ import os
 import re
 import sqlite3
 import time
-
-import redis
 import requests
 
 import plugins
