@@ -1,4 +1,4 @@
 {
-    "notifyHook": "",
-    "midjourneyProxy": "http://xxxxxxxxx:8080/mj"
+    "notifyHook": "", # 回调地址，如果没有就留空。
+    "midjourneyProxy": "http://xxxxxxxxx:8080/mj" # midjourney_proxy的服务，xxxx改成对应的服务ip，8080改成对应的端口
 }
